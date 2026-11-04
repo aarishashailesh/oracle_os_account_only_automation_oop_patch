@@ -257,6 +257,8 @@ the final filesystem state after the old homes are gone.
 
 ## SYS.DB_DDL_ALERT_TRG
 
+On a CDB the trigger statement is run with `catcon.pl` in CDB$ROOT and every open PDB (PDB$SEED excluded). The trigger is local to each container, so it must exist in each one; create it in every container the same way before the first cycle.
+
 - **Phase 3, Step 0a** (before the listener is stopped and before AutoUpgrade): `alter trigger SYS.DB_DDL_ALERT_TRG disable` in a non-CDB, or in the CDB root and every READ WRITE PDB. The database must be open. If it cannot be disabled, Phase 3 stops before anything is shut down.
 - **Phase 4, Step F:** the same statement with `enable`. If that fails, Phase 4 stops (no success marker), so Phase 5 cannot run until the trigger is enabled.
 - The database and instance names come from `DB_NAME` and `srvctl status database`. Containers without the trigger are skipped; PDBs that are not READ WRITE are reported in the log.
@@ -298,4 +300,5 @@ Only after both succeed are the old directories removed. A home that is already 
 | `INS-08101` / `NullPointerException` | `CV_ASSUME_DISTID` not set | Set it in `patch.conf` |
 | `TNS-01190` from `lsnrctl stop` | Listener is CRS-managed | Use `srvctl stop listener` |
 | `kfod` Error 49802 in AutoUpgrade analyze | ADR directory owned by wrong user | `chown -R oracle:oinstall $ORACLE_BASE/diag` |
+| AutoUpgrade analyze: `Database option APS/XOQ mismatch` | `XOQ_VALIDATE`/`APS_VALIDATE` not run in every container after `chopt disable olap` | Phase 4 Step D now does this with `catcon.pl`; by hand: run both procedures in each PDB and PDB$SEED, then close/reopen the PDBs |
 | "Phase N has not completed" | Missing success marker | Run earlier phases, or `--reset-status` after a snapshot restore |
